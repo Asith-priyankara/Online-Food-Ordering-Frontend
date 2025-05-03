@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
@@ -21,7 +21,7 @@ const PasswordSection= () => {
 
   const handleClick = async () => {
     try {
-      const data = await changePassword(userPassword, login);
+      await changePassword(userPassword, login);
       setUserPassword({ currentPassword: "", newPassword: "" });
       toast.success("Password change sucessfully");
     } catch (error) {

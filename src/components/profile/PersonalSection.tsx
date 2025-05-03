@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
@@ -35,7 +35,7 @@ const PersonalSection = () => {
 
   const handleSubmit = async () => {
     try {
-      const data = await updateUser({fullName: userDetail.fullName, phone: userDetail.phone});
+      await updateUser({fullName: userDetail.fullName, phone: userDetail.phone});
       updateUserDetails(userDetail);
       toast.success("User details updated");
     } catch (error) {

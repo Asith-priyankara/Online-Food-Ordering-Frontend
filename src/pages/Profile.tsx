@@ -7,7 +7,6 @@ import {
   Lock, 
   CreditCard, 
   Bell, 
-  LogOut, 
   Menu 
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

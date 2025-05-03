@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthProvider";
 import UserRegisterForm from "@/components/customUI/user-registerform";
 import RestaurantForm from "@/components/dashboard/RestaurantForm";
 
 export default function Register() {
-  const { login, role, token } = useAuth();
+  const { login, token } = useAuth();
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 

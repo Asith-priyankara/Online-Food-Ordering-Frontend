@@ -14,7 +14,6 @@ interface LoginData {
 }
 
 export default function Login() {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const { login } = useAuth();
 
   const [formData, setFormData] = useState <LoginData> ({

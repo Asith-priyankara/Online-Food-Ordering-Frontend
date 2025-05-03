@@ -1,4 +1,4 @@
-import { useParams, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -132,7 +132,7 @@ const menuItems = [
 ];
 
 export default function Restaurant() {
-  const { id } = useParams();
+  // const { id } = useParams();
   const [searchParams] = useSearchParams();
   const highlightedItemId = searchParams.get("item");
 

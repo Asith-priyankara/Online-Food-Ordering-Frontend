@@ -59,7 +59,7 @@ export default function RestaurantDashboard() {
     },
   ]);
 
-  const [activeOrders, setactiveOrders] = useState([
+  const [activeOrders] = useState([
     {
       id: "1234",
       customer: "John Doe",
@@ -70,7 +70,7 @@ export default function RestaurantDashboard() {
     },
   ]);
 
-  const [completedOrders, setCompletedOrders] = useState([
+  const [completedOrders] = useState([
     {
       id: "1233",
       customer: "Jane Smith",

@@ -5,7 +5,7 @@ import TopMeals from '@/components/customUI/TopMeals';
 import RestaurantList from '@/components/customUI/RestaurantList';
 
 export default function Home() {
-  return (
+    return (
     <div>
       {/* Hero Banner */}
       <section className="relative h-screen bg-black text-white">

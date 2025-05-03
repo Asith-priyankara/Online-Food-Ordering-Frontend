@@ -28,6 +28,7 @@ api.interceptors.response.use(
     (response) => {
         return response;
     },
+    
     (error) => {
         if(error.response) {
             console.error("API Response Error", error.response);

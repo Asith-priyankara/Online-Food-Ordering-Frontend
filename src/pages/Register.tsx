@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthProvider";
+import { registerUser } from "@/services/authService";
 import UserRegisterForm from "@/components/customUI/user-registerform";
 import RestaurantForm from "@/components/dashboard/RestaurantForm";
 
@@ -16,18 +17,8 @@ export default function Register() {
   const handleSubmit = async (formData: any) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${backendUrl}/auth/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
+      const data = await registerUser(formData);
 
-      if (!response.ok) {
-        throw new Error(data.message);
-      }
       const authData = {
         role: data.role,
         token: data.jwt,
@@ -43,7 +34,12 @@ export default function Register() {
         window.location.href = "/";
       }
     } catch (error: any) {
-      toast.error("Registration failed");
+      toast.error("Registration failed", {
+        description:
+          error.response?.data?.message ||
+          error.message ||
+          "Please try again later.",
+      });
     } finally {
       setIsLoading(false);
     }

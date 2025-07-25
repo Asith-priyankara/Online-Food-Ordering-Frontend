@@ -12,6 +12,8 @@ import ConfirmationDialog from "@/components/customUI/confirmation-dialog";
 import CardComponent from "@/components/customUI/card-component";
 import { useAuth } from "@/context/AuthProvider";
 import { toast } from "sonner";
+import { getRestaurantOrderHistory } from "@/services/orderService";
+import { getRestaurantFood } from "@/services/foodService";
 
 export default function RestaurantDashboard() {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -36,50 +38,11 @@ export default function RestaurantDashboard() {
     null
   );
 
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([
-    {
-      id: 1,
-      name: "Classic Burger",
-      description: "Juicy beef patty with lettuce, tomato, and special sauce",
-      price: 12.99,
-      category: "Burgers",
-      image:
-        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500",
-      available: true,
-    },
-    {
-      id: 2,
-      name: "Cheese Fries",
-      description: "Crispy fries topped with melted cheese",
-      price: 6.99,
-      category: "Sides",
-      image:
-        "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=500",
-      available: true,
-    },
-  ]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 
-  const [activeOrders] = useState([
-    {
-      id: "1234",
-      customer: "John Doe",
-      items: ["Classic Burger x2", "Cheese Fries x1"],
-      status: "preparing",
-      time: "10 mins ago",
-      total: 32.97,
-    },
-  ]);
-
-  const [completedOrders] = useState([
-    {
-      id: "1233",
-      customer: "Jane Smith",
-      items: ["Classic Burger x1", "Cheese Fries x2"],
-      status: "completed",
-      time: "1 hour ago",
-      total: 26.97,
-    },
-  ]);
+  const [activeOrders, setActiveOrders] = useState<any[]>([]);
+  const [completedOrders, setCompletedOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
   const [restaurantInfo, setRestaurantInfo] = useState({
     id: "",
@@ -118,9 +81,86 @@ export default function RestaurantDashboard() {
     } catch (error) {}
   };
 
+  const fetchOrders = async () => {
+    try {
+      setOrdersLoading(true);
+      if (restaurantInfo?.id) {
+        // Fetch active orders (pending, preparing, out_for_delivery)
+        const activeOrdersData = await getRestaurantOrderHistory(
+          restaurantInfo.id.toString(),
+          "PENDING"
+        );
+        const preparingOrdersData = await getRestaurantOrderHistory(
+          restaurantInfo.id.toString(),
+          "PREPARING"
+        );
+        const deliveryOrdersData = await getRestaurantOrderHistory(
+          restaurantInfo.id.toString(),
+          "OUT_FOR_DELIVERY"
+        );
+
+        setActiveOrders([
+          ...activeOrdersData,
+          ...preparingOrdersData,
+          ...deliveryOrdersData,
+        ]);
+
+        // Fetch completed orders
+        const completedOrdersData = await getRestaurantOrderHistory(
+          restaurantInfo.id.toString(),
+          "DELIVERED"
+        );
+        setCompletedOrders(completedOrdersData);
+      }
+    } catch (error: any) {
+      toast.error("Failed to load orders", {
+        description: error.response?.data?.message || "Please try again later",
+      });
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const fetchMenuItems = async () => {
+    try {
+      if (restaurantInfo?.id) {
+        const foodData = await getRestaurantFood(
+          parseInt(restaurantInfo.id),
+          false,
+          false,
+          false,
+          undefined
+        );
+        const transformedItems = foodData.map((food: any) => ({
+          id: food.id,
+          name: food.name,
+          description: food.description,
+          price: food.price,
+          category: food.category?.name || "Uncategorized",
+          image:
+            food.images?.[0] ||
+            "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500",
+          available: food.available,
+        }));
+        setMenuItems(transformedItems);
+      }
+    } catch (error: any) {
+      toast.error("Failed to load menu items", {
+        description: error.response?.data?.message || "Please try again later",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchRestaurantDetails();
   }, []);
+
+  useEffect(() => {
+    if (restaurantInfo?.id) {
+      fetchOrders();
+      fetchMenuItems();
+    }
+  }, [restaurantInfo]);
 
   const handleAddMenuItem = (formData: FormData) => {
     const newItem: MenuItem = {

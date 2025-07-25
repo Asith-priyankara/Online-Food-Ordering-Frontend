@@ -1,11 +1,40 @@
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Search, MapPin } from 'lucide-react';
-import TopMeals from '@/components/customUI/TopMeals';
-import RestaurantList from '@/components/customUI/RestaurantList';
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, MapPin } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import TopMeals from "@/components/customUI/TopMeals";
+import RestaurantList from "@/components/customUI/RestaurantList";
 
 export default function Home() {
-    return (
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [location, setLocation] = useState("");
+  const navigate = useNavigate();
+
+  const handleSearch = async () => {
+    if (!searchKeyword.trim()) {
+      toast.error("Please enter a search term");
+      return;
+    }
+
+    // Navigate to search results page
+    const params = new URLSearchParams();
+    params.set("q", searchKeyword);
+    if (location) {
+      params.set("location", location);
+    }
+
+    navigate(`/search?${params.toString()}`);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  return (
     <div>
       {/* Hero Banner */}
       <section className="relative h-screen bg-black text-white">
@@ -20,9 +49,10 @@ export default function Home() {
               Delicious Food Delivered To Your Door
             </h1>
             <p className="text-lg sm:text-xl">
-              Order from the best local restaurants with easy, on-demand delivery.
+              Order from the best local restaurants with easy, on-demand
+              delivery.
             </p>
-            
+
             {/* Search Bar */}
             <div className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto w-full">
               <div className="relative flex-1">
@@ -30,6 +60,9 @@ export default function Home() {
                 <Input
                   placeholder="Search restaurants or dishes"
                   className="pl-10 bg-white/90 text-black h-12"
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  onKeyPress={handleKeyPress}
                 />
               </div>
               <div className="relative sm:w-48">
@@ -37,9 +70,14 @@ export default function Home() {
                 <Input
                   placeholder="Location"
                   className="pl-10 bg-white/90 text-black h-12"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  onKeyPress={handleKeyPress}
                 />
               </div>
-              <Button className="h-12 px-8">Search</Button>
+              <Button className="h-12 px-8" onClick={handleSearch}>
+                Search
+              </Button>
             </div>
           </div>
         </div>

@@ -28,7 +28,7 @@ interface Order {
   };
 }
 
-export default function Orders() {
+export default function OrdersSection() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,8 +74,8 @@ export default function Orders() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold mb-8">Your Orders</h1>
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold">Order History</h2>
 
       {orders.length === 0 ? (
         <div className="text-center py-12">
@@ -90,26 +90,26 @@ export default function Orders() {
             <Card key={order.id}>
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-semibold">{order.restaurant.name}</h3>
                       <Badge variant={getStatusColor(order.orderStatus)}>
                         {formatStatus(order.orderStatus)}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-1">
                       Order #{order.id}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-3">
                       {new Date(order.createdAt).toLocaleDateString()}
                     </p>
-                    <ul className="mt-2">
+                    <div className="space-y-1">
                       {order.orderItems.map((item) => (
-                        <li key={item.id} className="text-sm">
+                        <p key={item.id} className="text-sm">
                           {item.food.name} x{item.quantity}
-                        </li>
+                        </p>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                   <p className="font-semibold">
                     ${order.totalAmount.toFixed(2)}

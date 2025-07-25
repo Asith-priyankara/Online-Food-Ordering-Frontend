@@ -12,5 +12,5 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
-  base: process.env.VITE_BACKEND_URL || "/Online-Food-Ordering-Frontend"
+  base: process.env.VITE_BACKEND_URL 
 });

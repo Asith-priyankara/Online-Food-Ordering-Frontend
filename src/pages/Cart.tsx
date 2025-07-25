@@ -1,107 +1,170 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Plus, ChevronDown, ShoppingBag } from 'lucide-react';
-import OrderCard from '@/components/customUI/OrderCard';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Plus, ChevronDown, ShoppingBag } from "lucide-react";
+import OrderCard from "@/components/customUI/OrderCard";
+import {
+  getUserCart,
+  updateCartItemQuantity,
+  removeCartItem,
+} from "@/services/cartService";
+import { getUserAddresses } from "@/services/userService";
+import { createOrder } from "@/services/orderService";
+import { PageLoading } from "@/components/ui/loading";
+import { toast } from "sonner";
 
 interface Address {
   id: number;
-  type: string;
-  address: string;
-  details: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
 }
 
 interface CartItem {
   id: number;
-  name: string;
-  price: number;
   quantity: number;
-  image: string;
-  ingredients?: string[];
+  ingredients: string[];
+  food: {
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+    images: string[];
+  };
+}
+
+interface Cart {
+  id: number;
+  cartItems: CartItem[];
+  customer: {
+    id: number;
+    fullName: string;
+  };
+  totalPrice: number;
 }
 
 export default function Cart() {
-  const addresses: Address[] = [
-    {
-      id: 1,
-      type: 'Home',
-      address: '123 Main St',
-      details: 'Apt 4B, New York, NY 10001'
-    },
-    {
-      id: 2,
-      type: 'Work',
-      address: '456 Business Ave',
-      details: 'Floor 12, New York, NY 10002'
-    }
-  ];
-
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [cart, setCart] = useState<Cart | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
-  
+
+  useEffect(() => {
+    fetchCartData();
+    fetchAddresses();
+  }, []);
+
   useEffect(() => {
     if (addresses.length > 0 && !selectedAddress) {
       setSelectedAddress(addresses[0]);
     }
-  }, []);
+  }, [addresses, selectedAddress]);
 
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: 1,
-      name: 'Classic Burger',
-      price: 12.99,
-      quantity: 2,
-      image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500',
-      ingredients: ['Lettuce', 'Tomato', 'Special Sauce']
-    },
-    {
-      id: 2,
-      name: 'Cheese Fries',
-      price: 6.99,
-      quantity: 1,
-      image: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=500'
-    },
-    {
-      id: 1,
-      name: 'Classic Burger',
-      price: 12.99,
-      quantity: 2,
-      image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500',
-      ingredients: ['Lettuce', 'Tomato', 'Special Sauce']
-    },
-    {
-      id: 2,
-      name: 'Cheese Fries',
-      price: 6.99,
-      quantity: 1,
-      image: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=500'
+  const fetchCartData = async () => {
+    try {
+      setLoading(true);
+      const cartData = await getUserCart();
+      setCart(cartData);
+    } catch (error: any) {
+      toast.error("Failed to load cart", {
+        description: error.response?.data?.message || "Please try again later",
+      });
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
-  const updateQuantity = (id: number, newQuantity: number) => {
+  const fetchAddresses = async () => {
+    try {
+      const addressData = await getUserAddresses();
+      setAddresses(addressData);
+    } catch (error: any) {
+      toast.error("Failed to load addresses", {
+        description: error.response?.data?.message || "Please try again later",
+      });
+    }
+  };
+
+  const updateQuantity = async (id: number, newQuantity: number) => {
     if (newQuantity === 0) {
-      removeItem(id);
+      await handleRemoveItem(id);
       return;
     }
-    setCartItems(items =>
-      items.map(item =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
+
+    try {
+      await updateCartItemQuantity({ cartItemId: id, quantity: newQuantity });
+      await fetchCartData(); // Refresh cart data
+      toast.success("Cart updated successfully");
+    } catch (error: any) {
+      toast.error("Failed to update cart", {
+        description: error.response?.data?.message || "Please try again later",
+      });
+    }
   };
 
-  const removeItem = (id: number) => {
-    setCartItems(items => items.filter(item => item.id !== id));
+  const handleRemoveItem = async (cartItemId: number) => {
+    try {
+      await removeCartItem(cartItemId.toString());
+      await fetchCartData(); // Refresh cart data
+      toast.success("Item removed from cart");
+    } catch (error: any) {
+      toast.error("Failed to remove item", {
+        description: error.response?.data?.message || "Please try again later",
+      });
+    }
   };
 
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const handlePlaceOrder = async () => {
+    if (!selectedAddress || !cart) {
+      toast.error("Please select a delivery address");
+      return;
+    }
+
+    try {
+      const orderRequest = {
+        restaurantId: cart.cartItems[0]?.food?.id ? "1" : "1", // You may need to adjust this based on your data structure
+        deliveryAddress: {
+          street: selectedAddress.street,
+          city: selectedAddress.city,
+          state: selectedAddress.state,
+          zipCode: selectedAddress.zipCode,
+        },
+      };
+
+      await createOrder(orderRequest);
+      toast.success("Order placed successfully!");
+      await fetchCartData(); // Refresh cart
+    } catch (error: any) {
+      toast.error("Failed to place order", {
+        description: error.response?.data?.message || "Please try again later",
+      });
+    }
+  };
+
+  const cartItems = cart?.cartItems || [];
+  const subtotal = cartItems.reduce(
+    (acc, item) => acc + item.food.price * item.quantity,
+    0
+  );
   const deliveryFee = 3.99;
   const tax = subtotal * 0.08; // 8% tax
   const total = subtotal + deliveryFee + tax;
+
+  if (loading) {
+    return <PageLoading message="Loading your cart..." />;
+  }
 
   return (
     <div className="mx-8 md:mx-20 px-4 sm:px-6 lg:px-8 py-14">
@@ -109,7 +172,7 @@ export default function Cart() {
         <ShoppingBag className="h-8 w-8" />
         <h1 className="text-3xl font-bold">Your Cart</h1>
       </div>
-      
+
       <div className="grid gap-8 lg:grid-cols-[1fr,400px]">
         {/* Left Column - Order Items */}
         <div>
@@ -118,7 +181,7 @@ export default function Cart() {
               <CardTitle className="text-lg flex items-center gap-2">
                 Order Items
                 <Badge variant="secondary" className="ml-2">
-                  {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
+                  {cartItems.length} {cartItems.length === 1 ? "item" : "items"}
                 </Badge>
               </CardTitle>
             </CardHeader>
@@ -127,15 +190,25 @@ export default function Cart() {
                 {cartItems.map((item) => (
                   <OrderCard
                     key={item.id}
-                    {...item}
+                    id={item.id}
+                    name={item.food.name}
+                    price={item.food.price}
+                    quantity={item.quantity}
+                    image={
+                      item.food.images?.[0] ||
+                      "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500"
+                    }
+                    ingredients={item.ingredients}
                     onUpdateQuantity={updateQuantity}
-                    onRemove={removeItem}
+                    onRemove={handleRemoveItem}
                   />
                 ))}
                 {cartItems.length === 0 && (
                   <div className="text-center py-8">
                     <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground" />
-                    <p className="mt-2 text-muted-foreground">Your cart is empty</p>
+                    <p className="mt-2 text-muted-foreground">
+                      Your cart is empty
+                    </p>
                   </div>
                 )}
               </div>
@@ -158,12 +231,13 @@ export default function Cart() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">{selectedAddress.type}</p>
+                      <p className="font-medium">Delivery Address</p>
                       <p className="text-sm text-muted-foreground">
-                        {selectedAddress.address}
+                        {selectedAddress.street}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {selectedAddress.details}
+                        {selectedAddress.city}, {selectedAddress.state}{" "}
+                        {selectedAddress.zipCode}
                       </p>
                     </div>
                     <Sheet>
@@ -181,13 +255,18 @@ export default function Cart() {
                           <RadioGroup
                             value={selectedAddress.id.toString()}
                             onValueChange={(value) => {
-                              const address = addresses.find(a => a.id === parseInt(value));
+                              const address = addresses.find(
+                                (a) => a.id === parseInt(value)
+                              );
                               if (address) setSelectedAddress(address);
                             }}
                             className="space-y-4"
                           >
                             {addresses.map((address) => (
-                              <div key={address.id} className="flex items-start space-x-3">
+                              <div
+                                key={address.id}
+                                className="flex items-start space-x-3"
+                              >
                                 <RadioGroupItem
                                   value={address.id.toString()}
                                   id={`address-${address.id}`}
@@ -197,13 +276,14 @@ export default function Cart() {
                                     htmlFor={`address-${address.id}`}
                                     className="font-medium"
                                   >
-                                    {address.type}
+                                    Address {address.id}
                                   </Label>
                                   <p className="text-sm text-muted-foreground">
-                                    {address.address}
+                                    {address.street}
                                   </p>
                                   <p className="text-sm text-muted-foreground">
-                                    {address.details}
+                                    {address.city}, {address.state}{" "}
+                                    {address.zipCode}
                                   </p>
                                 </div>
                               </div>
@@ -212,7 +292,7 @@ export default function Cart() {
                           <Button
                             variant="outline"
                             className="w-full mt-4"
-                            onClick={() => console.log('Add new address')}
+                            onClick={() => console.log("Add new address")}
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             Add New Address
@@ -251,10 +331,11 @@ export default function Cart() {
                   <span>${total.toFixed(2)}</span>
                 </div>
               </div>
-              <Button 
+              <Button
                 className="w-full"
                 size="lg"
                 disabled={!selectedAddress || cartItems.length === 0}
+                onClick={handlePlaceOrder}
               >
                 Place Order
               </Button>
